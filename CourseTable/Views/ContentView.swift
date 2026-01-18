@@ -58,9 +58,21 @@ struct ContentView: View {
     }
     
     private func loadCourses() {
-        // TODO: 从JSON文件加载课程数据
-        // 这里暂时返回空数组
-        self.courses = []
+        guard let url = Bundle.main.url(forResource:"courses", withExtension: "json"),
+              let data = try? Data(contentsOf: url) else {
+                  print("无法加载courses.json")
+                  return
+              }
+        
+        struct Wrapper: Codable {
+            let courses: [Course]
+        }
+        
+        if let wrapper = try? JSONDecoder().decode(Wrapper.self, from: data) {
+            self.courses = wrapper.courses
+        } else {
+            print("解码courses.json失败")
+        }
     }
    
     private func calculateCurrentWeek() {

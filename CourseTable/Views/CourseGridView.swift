@@ -24,7 +24,7 @@ struct CourseGridView: View {
                         let day = dayIndex + 1
                         let time = timeIndex + 1
                         
-                        EmptyCellView()
+                        CourseCellView(day: day, time: time, courses: courses, currentWeek: currentWeek)
                             .frame(maxWidth: .infinity)
                     }
                 }

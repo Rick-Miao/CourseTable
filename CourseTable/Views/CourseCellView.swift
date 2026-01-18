@@ -27,8 +27,14 @@ struct CourseCellView: View {
     }
     
     private func findCourse(for day: Int, at time: Int) -> Course? {
-        // TODO: 实现课程查找逻辑
-        // 检查星期和节次，并考虑单双周
+        for course in courses {
+            if course.week == day &&
+                course.times.contains(time) &&
+                currentWeek >= course.startWeek &&
+                currentWeek <= course.endWeek {
+                    return course
+            }
+        }
         return nil
     }
 }
