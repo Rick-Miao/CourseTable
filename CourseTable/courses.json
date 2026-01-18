@@ -1,0 +1,22 @@
+{
+    "courses": [
+        {
+            "name": "操作系统",
+            "teacher": "王娜",
+            "classroom": "8506（多媒体）",
+            "week": 1, // 表示周一的课
+            "times": [3, 4],
+            "startWeek": 1,
+            "endWeek": 16
+        }，
+        {
+            "name": "操作系统",
+            "teacher": "王娜",
+            "classroom": "8505（多媒体）",
+            "week": 2, // 表示周二的课
+            "times": [3, 4],
+            "startWeek": 1,
+            "endWeek": 16
+        }
+    ]
+}
