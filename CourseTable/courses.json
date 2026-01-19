@@ -10,13 +10,131 @@
             "endWeek": 16
         },
         {
+            "name": "Modelling Techniques for Information Systems",
+            "teacher": "桂文明",
+            "classroom": "科技楼3栋501",
+            "week": 1,
+            "times": [7, 8],
+            "startWeek": 1,
+            "endWeek": 12
+        },
+        {
+            "name": "计算机网络课程设计",
+            "teacher": "窦如林",
+            "classroom": "科技楼2栋414",
+            "week": 2,
+            "times": [7, 8, 9],
+            "startWeek": 1,
+            "endWeek": 6
+        },
+        {
+            "name": "软件测试技术课程设计",
+            "teacher": "王智钢",
+            "classroom": "科技楼2栋317",
+            "week": 4,
+            "times": [7, 8, 9],
+            "startWeek": 11,
+            "endWeek": 11
+        },
+        {
+            "name": "软件测试技术课程设计",
+            "teacher": "王智钢",
+            "classroom": "科技楼2栋317",
+            "week": 5,
+            "times": [7, 8, 9],
+            "startWeek": 9,
+            "endWeek": 11
+        },
+        {
+            "name": "Networks",
+            "teacher": "李景仙",
+            "classroom": "科技楼2栋309",
+            "week": 5,
+            "times": [7, 8],
+            "startWeek": 2,
+            "endWeek": 4
+        },
+        {
+            "name": "Networks",
+            "teacher": "李景仙",
+            "classroom": "科技楼2栋309",
+            "week": 5,
+            "times": [5, 6],
+            "startWeek": 2,
+            "endWeek": 4
+        },
+        {
+            "name": "Networks",
+            "teacher": "李景仙",
+            "classroom": "科技楼2栋309",
+            "week": 5,
+            "times": [7, 8],
+            "startWeek": 6,
+            "endWeek": 8
+        },
+        {
+            "name": "Networks",
+            "teacher": "李景仙",
+            "classroom": "科技楼2栋309",
+            "week": 5,
+            "times": [5, 6],
+            "startWeek": 6,
+            "endWeek": 8
+        },
+        {
+            "name": "Business Process Modelling",
+            "teacher": "朱皖宁",
+            "classroom": "科技楼2栋415",
+            "week": 1,
+            "times": [5, 6],
+            "startWeek": 1,
+            "endWeek": 12
+        },
+        {
+            "name": "计算机网络课程设计",
+            "teacher": "窦如林",
+            "classroom": "科技楼2栋414",
+            "week": 2,
+            "times": [5, 6],
+            "startWeek": 1,
+            "endWeek": 6
+        },
+        {
+            "name": "软件质量保证与测试",
+            "teacher": "刘辉辉",
+            "classroom": "科技楼2栋414",
+            "week": 2,
+            "times": [5, 6],
+            "startWeek": 9,
+            "endWeek": 16
+        },
+        {
+            "name": "软件测试技术课程设计",
+            "teacher": "王智钢",
+            "classroom": "科技楼2栋317",
+            "week": 4,
+            "times": [5, 6],
+            "startWeek": 11,
+            "endWeek": 11
+        },
+        {
             "name": "操作系统",
             "teacher": "王娜",
-            "classroom": "8505（多媒体）",
-            "week": 2,
-            "times": [3, 4],
+            "classroom": "8506（多媒体）",
+            "week": 4,
+            "times": [5, 6],
             "startWeek": 1,
-            "endWeek": 16
-        }
+            "endWeek": 10
+        },
+        {
+            "name": "软件测试技术课程设计",
+            "teacher": "王智钢",
+            "classroom": "科技楼2栋317",
+            "week": 5,
+            "times": [5, 6],
+            "startWeek": 9,
+            "endWeek": 11
+        },
+        
     ]
 }

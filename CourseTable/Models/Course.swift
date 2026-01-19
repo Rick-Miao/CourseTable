@@ -5,7 +5,7 @@
 //  Created by Xiaobei on 2026/1/18.
 //
 
-struct Course: Codable, Identifiable {
+struct Course: Codable, Identifiable, Equatable {
     var id: String {
         "\(name)_\(teacher)_\(week)_\(times.first ?? 0)_\(startWeek)_\(endWeek)"
     }

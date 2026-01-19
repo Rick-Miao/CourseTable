@@ -28,6 +28,8 @@ struct ContentView: View {
             ("12", "20:10", "20:55")
         ]
     
+    @State private var gridData: [DayColumn] = []
+    
     var body: some View {
         VStack(spacing: 0) {
             // 顶部标题栏
@@ -37,6 +39,9 @@ struct ContentView: View {
             MainContentView()
         }
         .onAppear(perform: loadData)
+        .onChange(of: currentWeek) { _, _ in
+            gridData = buildGridData()
+        }
     }
     
     private func MainContentView() -> some View {
@@ -46,7 +51,8 @@ struct ContentView: View {
                 WeekHeaderView(currentDate: currentDate)
                 
                 // 课程表格
-                CourseGridView(courses: courses,times: times, currentWeek: currentWeek)
+                // CourseGridView(courses: courses,times: times, currentWeek: currentWeek)
+                MergedCourseGridView(courses: courses, currentWeek: currentWeek, times: times)
             }
         }
     }
@@ -55,6 +61,9 @@ struct ContentView: View {
         //TODO: 这里实现数据加载逻辑
         loadCourses()
         calculateCurrentWeek()
+        let mergedCourses = mergeConsecutiveCourses(courses)
+        self.courses = mergedCourses
+        gridData = buildGridData()
     }
     
     private func loadCourses() {
@@ -80,7 +89,89 @@ struct ContentView: View {
         // 这里暂时设置为第1周
         self.currentWeek = 1
     }
+
+    private func buildGridData() -> [DayColumn] {
+        var columns = (1...7).map { DayColumn(day: $0) }
+        for day in 1...7 {
+            var dayCourses = courses.filter {
+                $0.week == day &&
+                currentWeek >= $0.startWeek &&
+                currentWeek <= $0.endWeek
+            }
+                .sorted { $0.times.first! < $1.times.first! }
+            
+            var usedTimes = Set<Int>()
+            var cells: [CellItem] = []
+            
+            for time in 1...12 {
+                if usedTimes.contains(time) {
+                    continue
+                }
+                if let course = dayCourses.first(where: { $0.times.contains(time) }) {
+                    // 找到连续节次范围
+                    let sortedTimes = course.times.sorted()
+                    guard let startIndex = sortedTimes.firstIndex(of: time) else { continue }
+                    
+                    var span = 1
+                    while startIndex + span < sortedTimes.count,
+                          sortedTimes[startIndex + span] == time + span {
+                        span += 1
+                    }
+                    
+                    // 标记这些节次已使用
+                    for t in time..<(time + span) {
+                        usedTimes.insert(t)
+                    }
+                    
+                    cells.append(.course(course, span: span))
+                } else {
+                    cells.append(.empty)
+                }
+            }
+            columns[day - 1].cells = cells
+        }
+        return columns
+    }
+    private func mergeConsecutiveCourses(_ courses: [Course]) -> [Course] {
+        // 按 day + name + teacher + classroom 分组
+        let grouped = Dictionary(grouping: courses) { course in
+            "\(course.week)-\(course.name)-\(course.teacher)-\(course.classroom)-\(course.startWeek)-\(course.endWeek)"
+        }
+        
+        var merged: [Course] = []
+        
+        for group in grouped.values {
+            // 合并所有 times
+            var allTimes = Set<Int>()
+            for course in group {
+                allTimes.formUnion(course.times)
+            }
+            
+            // 排序并合并连续节次（其实 Set 已去重，直接排序即可）
+            let sortedTimes = Array(allTimes).sorted()
+            
+            // 创建新 Course（取第一个作为模板）
+            let template = group[0]
+            let mergedCourse = Course(
+                name: template.name,
+                teacher: template.teacher,
+                classroom: template.classroom,
+                week: template.week,
+                times: sortedTimes,
+                startWeek: template.startWeek,
+                endWeek: template.endWeek
+            )
+            
+            merged.append(mergedCourse)
+        }
+        
+        return merged
+    }
 }
+
+
+    
+
 
 #Preview {
     ContentView()
