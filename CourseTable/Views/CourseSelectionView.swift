@@ -13,20 +13,40 @@ struct CourseSelectionView: View {
     let onSelect: (String) -> Void
     let onRename: (String, String) -> Void
     let onDelete: (String) -> Void
-    
+
     @State private var showingRenameAlert = false
     @State private var currentName = ""
     @State private var newName = ""
     
     var body: some View {
         NavigationStack {
-            List(courseNames, id: \.self) { name in
-                // 右滑操作
-                SwipeActions(name: name, onRename: startRename, onDelete: onDelete)
-                    .onTapGesture {
-                        onSelect(name)
-                        dismiss()
+            List(courseNames, id: \.self) { fullName in
+                let displayName = extractDisplayName(fullName)
+                Button(action: {
+                    onSelect(fullName)
+                    dismiss()
+                }) {
+                    HStack {
+                        Text(displayName)
+                        Spacer()
                     }
+                    .contentShape(Rectangle()) // 👈 确保整行可点击
+                }
+                .buttonStyle(.plain) // 👈 去除默认按钮样式
+                
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button(role: .destructive) {
+                        onDelete(fullName)
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    
+                    Button {
+                        startRename(fullName)
+                    } label: {
+                        Image(systemName: "pencil")
+                    }
+                }
             }
             .navigationTitle("课程表")
             .navigationBarTitleDisplayMode(.inline)
@@ -48,6 +68,13 @@ struct CourseSelectionView: View {
                 Text("请输入新名称")
             }
         }
+    }
+    
+    private func extractDisplayName(_ fullName: String) -> String {
+        if let underscoreIndex = fullName.firstIndex(of: "_") {
+            return String(fullName[fullName.index(after: underscoreIndex)...])
+        }
+        return fullName
     }
     
     private func startRename(_ name: String) {

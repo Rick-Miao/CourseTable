@@ -14,6 +14,8 @@ struct ContentView: View {
     @State private var config: Config? = nil
     @State private var showingCourseList = false
     @State private var courseNames: [String] = []
+    
+    private let lastSelectedCourseKey = "LastSelectedCourseName"
     private var times: [(period: String, startTime: String, endTime: String)] {
         guard let config = config else {
             return [
@@ -83,14 +85,15 @@ struct ContentView: View {
         // 课程表选择弹窗
         .sheet(isPresented: $showingCourseList) {
             CourseSelectionView(
-                courseNames: $courseNames,  // 👈 改为 Binding
+                courseNames: $courseNames,
                 onSelect: { name in
                     loadCourseByName(name)
                     showingCourseList = false
+                    UserDefaults.standard.set(name, forKey: lastSelectedCourseKey)
                 },
                 onRename: { oldName, newName in
                     renameCourse(oldName, to: newName)
-                    courseNames = loadAllCourseNames()  // 👈 重命名后刷新
+                    courseNames = loadAllCourseNames()
                 },
                 onDelete: { name in
                     deleteCourse(name)
@@ -131,18 +134,31 @@ struct ContentView: View {
     }
     
     private func loadCourses() {
-        // 优先从 courseData 目录加载
-        if FileManager.default.fileExists(atPath: currentCourseFileURL.path) {
-            if let data = try? Data(contentsOf: currentCourseFileURL) {
-                decodeAndSetData(data)
-                return
+        // 1. 尝试加载最后选择的课表
+        if let lastName = UserDefaults.standard.string(forKey: lastSelectedCourseKey) {
+            let fileURL = courseDataDirectory.appendingPathComponent("\(lastName).json")
+            if FileManager.default.fileExists(atPath: fileURL.path) {
+                if let data = try? Data(contentsOf: fileURL) {
+                    decodeAndSetData(data)
+                    return
+                }
             }
         }
         
-        // 首次启动：courses 保持为空
+        // 2. 回退到第一个课表
+        let names = loadAllCourseNames()
+        if let firstName = names.first {
+            loadCourseByName(firstName)
+            // 保存为最后选择的课表
+            UserDefaults.standard.set(firstName, forKey: lastSelectedCourseKey)
+            return
+        }
+        
+        // 3. 没有课表时清空
         self.courses = []
         self.config = nil
     }
+
 
     private func decodeAndSetData(_ data: Data) {
         struct Wrapper: Codable {
@@ -275,10 +291,6 @@ struct ContentView: View {
     private var courseDataDirectory: URL {
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         return documents.appendingPathComponent("courseData", isDirectory: true)
-    }
-
-    private var currentCourseFileURL: URL {
-        courseDataDirectory.appendingPathComponent("current_course.json")
     }
 
     private func ensureCourseDataDirectoryExists() {
