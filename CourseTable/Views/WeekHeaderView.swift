@@ -16,17 +16,26 @@ struct WeekHeaderView: View {
             if let date = calendar.date(byAdding: .day, value: offset, to: currentDate) {
                 return calendar.component(.day, from: date)
             } else {
-                return -1 // 标记为不显示
+                return -1
             }
         }
+    }
+    
+    private var monthString: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M"
+        formatter.locale = Locale(identifier: "zh_CN")
+        return formatter.string(from: currentDate)
     }
     
     var body: some View {
         VStack(spacing: 0){
             HStack(spacing: 0) {
                 // 左侧空白单元格
-                Text("")
-                    .frame(width: 60, height: 30)
+                Text(monthString)
+//                    .font(.system(size: 12, weight: .medium))
+                    .frame(width: 60, height: 24)
+                    .background(Color(.systemBackground))
                 
                 // 星期表头（周一至周日）
                 ForEach(0..<7, id: \.self) { index in
@@ -40,7 +49,7 @@ struct WeekHeaderView: View {
             
             // 第二行：日期数字（只周一到周五）
             HStack(spacing: 0) {
-                Text("")
+                Text("月")
                     .frame(width: 60, height: 30)
                 
                 ForEach(0..<7, id: \.self) { index in

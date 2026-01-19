@@ -8,12 +8,13 @@
 import SwiftUI
 
 struct HeaderView: View {
+    let today: Date
     @Binding var currentDate: Date
     @Binding var currentWeek: Int
     
     var body: some View {
         VStack(spacing: 8) {
-            Text(currentDate.formatDate())
+            Text(today.formatDate())
                 .font(.system(size: 24, weight: .bold))
                 .foregroundColor(.primary)
             

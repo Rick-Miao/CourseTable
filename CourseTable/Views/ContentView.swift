@@ -33,7 +33,7 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             // 顶部标题栏
-            HeaderView(currentDate: $currentDate, currentWeek: $currentWeek)
+            HeaderView(today: Date(), currentDate: $currentDate, currentWeek: $currentWeek)
             
             // 主体内容
             MainContentView()
@@ -84,8 +84,9 @@ struct ContentView: View {
     }
    
     private func calculateCurrentWeek() {
-        // TODO: 计算当前是第几周
-        let calendar = Calendar.current
+        var calendar = Calendar.current
+        calendar.firstWeekday = 2 // 1=周日, 2=周一
+        calendar.minimumDaysInFirstWeek = 4 // ISO 标准：第一周至少包含4天
         guard let semesterStart = calendar.date(from: DateComponents(year: 2025, month: 9, day: 8)) else {
             print("无法创建学期开始日期")
             currentWeek = 1
