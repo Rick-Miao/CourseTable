@@ -12,11 +12,5 @@ struct EmptyCellView: View {
         Rectangle()
             .fill(Color.clear)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .overlay(
-                Rectangle()
-                    .frame(width: 1)
-                    .foregroundColor(Color(.separator)),
-                alignment: .trailing
-            )
     }
 }

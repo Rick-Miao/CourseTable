@@ -8,10 +8,10 @@
 import SwiftUI
 
 struct MergedCourseGridView: View {
-//    let gridData: [DayColumn]
     let courses: [Course]
     let currentWeek: Int
     let times: [(period: String, startTime: String, endTime: String)]
+    @State private var selectedCourse: Course? = nil
     
     var body: some View {
         LazyVStack(spacing: 0) {
@@ -32,6 +32,9 @@ struct MergedCourseGridView: View {
                             MergedCourseCell(course: course)
                                 .frame(height: CGFloat(span) * 80 - 1)
                                 .offset(y: CGFloat(span - 1) * 40)
+                                .onTapGesture {
+                                    selectedCourse = course
+                                }
                         } else if isPartOfCourse(for: day, at: time) {
                             Color.clear
                         } else {
@@ -40,15 +43,12 @@ struct MergedCourseGridView: View {
                     }
                 }
                 .frame(height: 80)
-                .overlay(
-                    Rectangle()
-                        .frame(height: 1)
-                        .foregroundColor(Color(.separator)),
-                    alignment: .bottom
-                )
             }
         }
         .background(Color(.systemBackground))
+        .sheet(item: $selectedCourse) { course in
+            CourseDetailView(course: course)
+        }
     }
     
     private func findStartingCourse(for day: Int, at time: Int) -> (Course, span: Int)? {

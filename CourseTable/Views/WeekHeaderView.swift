@@ -22,18 +22,18 @@ struct WeekHeaderView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical)
                     .background(Color(.systemBackground))
-                    .overlay(
-                        Rectangle()
-                            .frame(height: 1)
-                            .foregroundColor(Color(.separator)),
-                        alignment: .bottom
-                    )
-                    .overlay(
-                        Rectangle()
-                            .frame(width: 1)
-                            .foregroundColor(Color(.separator)),
-                        alignment: .trailing
-                    )
+//                    .overlay(
+//                        Rectangle()
+//                            .frame(height: 1)
+//                            .foregroundColor(Color(.separator)),
+//                        alignment: .bottom
+//                    )
+//                    .overlay(
+//                        Rectangle()
+//                            .frame(width: 1)
+//                            .foregroundColor(Color(.separator)),
+//                        alignment: .trailing
+//                    )
             }
         }
         .frame(height: 50)

@@ -29,12 +29,6 @@ struct CourseGridView: View {
                     }
                 }
                 .frame(height: 80)
-                .overlay(
-                    Rectangle()
-                        .frame(height: 1)
-                        .foregroundColor(Color(.separator)),
-                    alignment: .bottom
-                )
             }
         }
         .background(Color(.systemBackground))
@@ -61,11 +55,5 @@ struct TimeColumnView: View {
         }
         .frame(width: 60)
         .background(Color(.systemBackground))
-        .overlay(
-            Rectangle()
-                .frame(width: 1)
-                .foregroundColor(Color(.separator)),
-            alignment: .trailing
-        )
     }
 }

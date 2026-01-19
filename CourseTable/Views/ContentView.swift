@@ -51,7 +51,6 @@ struct ContentView: View {
                 WeekHeaderView(currentDate: currentDate)
                 
                 // 课程表格
-                // CourseGridView(courses: courses,times: times, currentWeek: currentWeek)
                 MergedCourseGridView(courses: courses, currentWeek: currentWeek, times: times)
             }
         }
