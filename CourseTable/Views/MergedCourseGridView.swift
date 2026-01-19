@@ -14,7 +14,7 @@ struct MergedCourseGridView: View {
     @State private var selectedCourse: Course? = nil
     
     var body: some View {
-        LazyVStack(spacing: 0) {
+        VStack(spacing: 0) {
             ForEach(0..<times.count, id: \.self) { timeIndex in
                 HStack(spacing: 0) {
                     // 左侧：时间列（固定宽度）
@@ -63,19 +63,6 @@ struct MergedCourseGridView: View {
                 return (course, sortedTimes.count)
             }
         }
-//        guard let course = gridData.first(where: { $0.day == day })?
-//                .cells.enumerated().first(where: {
-//                    if case .course(let c, let span) = $0.element {
-//                        let startIndex = $0.offset
-//                        let actualTime = startIndex + 1
-//                        return actualTime == time
-//                    }
-//                    return false
-//                }) else { return nil }
-//        
-//        if case .course(let c, let span) = course.element {
-//            return (c, span)
-//        }
         return nil
     }
     
@@ -90,45 +77,22 @@ struct MergedCourseGridView: View {
             let sortedTimes = course.times.sorted()
             return sortedTimes.first != time // 不是第一节就是中间节
         }
-//        guard let dayColumn = gridData.first(where: { $0.day == day }) else { return false }
-//        
-//        for (index, cell) in dayColumn.cells.enumerated() {
-//            let cellTime = index + 1
-//            if case .course(_, let span) = cell {
-//                if time > cellTime && time < cellTime + span {
-//                    return true
-//                }
-//            }
-//        }
         return false
-    }
-    
-    private func calculateRowHeight(rowIndex: Int) -> Double {
-        // 找到该行对应的所有 span，取最大值
-        // 简化处理：直接返回 80（因为时间列不需要合并）
-        return 80
     }
     
     private struct MergedCourseCell: View {
         let course: Course
         
         var body: some View {
-            VStack(spacing: 2) {
-                Text(course.name)
-                    .font(.system(size: 12, weight: .medium))
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-                
-                Text(course.classroom)
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
-            }
-            .padding(.horizontal, 4)
-            .padding(.vertical, 6)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.blue.opacity(0.15))
-            .cornerRadius(4)
-            .padding(2)
+            Text("\(course.name) @ \(course.classroom)")
+                .font(.system(size: 12, weight: .medium))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 6)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.blue.opacity(0.15))
+                .cornerRadius(4)
+                .padding(2)
         }
     }
 }

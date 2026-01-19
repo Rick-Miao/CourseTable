@@ -1,7 +1,7 @@
 //
 //  CourseGridView.swift
 //  CourseTable
-//
+//  弃用
 //  Created by Xiaobei on 2026/1/18.
 //
 

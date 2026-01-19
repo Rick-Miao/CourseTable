@@ -1,7 +1,7 @@
 //
 //  CourseCellView.swift
 //  CourseTable
-//
+//  弃用
 //  Created by Xiaobei on 2026/1/18.
 //
 
@@ -14,9 +14,6 @@ struct CourseCellView: View {
     let currentWeek: Int
     
     var body: some View {
-        // TODO: 根据课程数据找到对应课程
-        // 这里先实现占位逻辑
-        
         let course = findCourse(for: day, at: time)
         
         if let course = course {
@@ -43,20 +40,14 @@ struct CourseCell: View {
     let course: Course
     
     var body: some View {
-        VStack(spacing: 2) {
-            Text(course.name)
-                .font(.system(size: 12, weight: .medium))
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-            
-            Text(course.classroom)
-                .font(.system(size: 10))
-                .foregroundColor(.secondary)
-        }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 6)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .cornerRadius(4)
-        .padding(2)
+        Text("\(course.name) @ \(course.classroom)")
+              .font(.system(size: 12, weight: .medium))
+              .lineLimit(2)
+              .multilineTextAlignment(.center)
+              .padding(.horizontal, 4)
+              .padding(.vertical, 6)
+              .frame(maxWidth: .infinity, maxHeight: .infinity)
+              .cornerRadius(4)
+              .padding(2)
     }
 }

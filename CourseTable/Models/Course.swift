@@ -1,5 +1,5 @@
 //
-//  CourseStruct.swift
+//  Course.swift
 //  CourseTable
 //
 //  Created by Xiaobei on 2026/1/18.

@@ -1,0 +1,239 @@
+{
+    "config": {
+        "semesterStart": "2026-03-02",
+        "totalWeeks": 20,
+        "periods": [
+            { "period": "1", "startTime": "08:30", "endTime": "09:15" },
+            { "period": "2", "startTime": "09:20", "endTime": "10:05" },
+            { "period": "3", "startTime": "10:25", "endTime": "11:10" },
+            { "period": "4", "startTime": "11:15", "endTime": "12:00" },
+            { "period": "5", "startTime": "13:30", "endTime": "14:15" },
+            { "period": "6", "startTime": "14:20", "endTime": "15:05" },
+            { "period": "7", "startTime": "15:25", "endTime": "16:10" },
+            { "period": "8", "startTime": "16:15", "endTime": "17:00" },
+            { "period": "9", "startTime": "17:05", "endTime": "17:50" },
+            { "period": "10", "startTime": "18:30", "endTime": "19:15" },
+            { "period": "11", "startTime": "19:20", "endTime": "20:05" },
+            { "period": "12", "startTime": "20:10", "endTime": "20:55" }
+        ]
+      },
+    "courses": [
+      {
+        "name": "专业方向课程设计",
+        "teacher": "肖芳雄",
+        "classroom": "程序设计与软件技术实验室(二分室)(科技楼2栋414)",
+        "week": 1,
+        "times": [
+          1,
+          2
+        ],
+        "startWeek": 13,
+        "endWeek": 16
+      },
+      {
+        "name": "专业方向课程设计",
+        "teacher": "肖芳雄",
+        "classroom": "程序设计与软件技术实验室(二分室)(科技楼2栋414)",
+        "week": 2,
+        "times": [
+          1,
+          2
+        ],
+        "startWeek": 13,
+        "endWeek": 16
+      },
+      {
+        "name": "Cybersecurity (网络安全)",
+        "teacher": "窦如林(窦如林)",
+        "classroom": "程序设计与软件技术实验室(二分室)(科技楼2栋414)",
+        "week": 2,
+        "times": [
+          1,
+          2
+        ],
+        "startWeek": 2,
+        "endWeek": 7
+      },
+      {
+        "name": "Academic English",
+        "teacher": "肖冬平",
+        "classroom": "云语音教室2（科技楼3号楼520）",
+        "week": 3,
+        "times": [
+          1,
+          2
+        ],
+        "startWeek": 1,
+        "endWeek": 16
+      },
+      {
+        "name": "Cybersecurity (网络安全)",
+        "teacher": "窦如林(窦如林)",
+        "classroom": "程序设计与软件技术实验室(二分室)(科技楼2栋414)",
+        "week": 4,
+        "times": [
+          1,
+          2
+        ],
+        "startWeek": 2,
+        "endWeek": 7
+      },
+      {
+        "name": "Management(管理学)",
+        "teacher": "秦峰",
+        "classroom": "8103(多媒体)",
+        "week": 1,
+        "times": [
+          3,
+          4
+        ],
+        "startWeek": 1,
+        "endWeek": 12
+      },
+      {
+        "name": "专业方向课程设计",
+        "teacher": "肖芳雄",
+        "classroom": "程序设计与软件技术实验室(二分室)(科技楼2栋414)",
+        "week": 1,
+        "times": [
+          3,
+          4
+        ],
+        "startWeek": 13,
+        "endWeek": 16
+      },
+      {
+        "name": "软件设计与体系结构",
+        "teacher": "刘辉辉(刘辉辉)",
+        "classroom": "1401（多媒体）",
+        "week": 2,
+        "times": [
+          3,
+          4
+        ],
+        "startWeek": 1,
+        "endWeek": 12
+      },
+      {
+        "name": "专业方向课程设计",
+        "teacher": "肖芳雄",
+        "classroom": "程序设计与软件技术实验室(二分室)(科技楼2栋414)",
+        "week": 2,
+        "times": [
+          3,
+          4
+        ],
+        "startWeek": 13,
+        "endWeek": 16
+      },
+      {
+        "name": "软件设计与体系结构",
+        "teacher": "刘辉辉(刘辉辉)",
+        "classroom": "1401（多媒体）",
+        "week": 3,
+        "times": [
+          3,
+          4
+        ],
+        "startWeek": 13,
+        "endWeek": 16
+      },
+      {
+        "name": "Information Systems Lifecycle Management(信息系统生命周期管理)",
+        "teacher": "郭婧(郭婧)",
+        "classroom": "2408（多媒体）",
+        "week": 3,
+        "times": [
+          3,
+          4
+        ],
+        "startWeek": 1,
+        "endWeek": 12
+      },
+      {
+        "name": "软件设计与体系结构",
+        "teacher": "刘辉辉(刘辉辉)",
+        "classroom": "程序设计与软件技术实验室(二分室)(科技楼2栋414)",
+        "week": 4,
+        "times": [
+          3,
+          4
+        ],
+        "startWeek": 13,
+        "endWeek": 16
+      },
+      {
+        "name": "Management(管理学)",
+        "teacher": "秦峰",
+        "classroom": "8103(多媒体)",
+        "week": 4,
+        "times": [
+          3,
+          4
+        ],
+        "startWeek": 1,
+        "endWeek": 12
+      },
+      {
+        "name": "Business Requirements Analysis(企业数据挖掘)",
+        "teacher": "龚如宾(龚如宾)",
+        "classroom": "8105(多媒体)",
+        "week": 5,
+        "times": [
+          3,
+          4
+        ],
+        "startWeek": 1,
+        "endWeek": 12
+      },
+      {
+        "name": "专业方向课程设计",
+        "teacher": "肖芳雄",
+        "classroom": "程序设计与软件技术实验室(二分室)(科技楼2栋414)",
+        "week": 1,
+        "times": [
+          5,
+          6
+        ],
+        "startWeek": 13,
+        "endWeek": 16
+      },
+      {
+        "name": "软件设计与体系结构",
+        "teacher": "刘辉辉(刘辉辉)",
+        "classroom": "程序设计与软件技术实验室(二分室)(科技楼2栋414)",
+        "week": 2,
+        "times": [
+          5,
+          6
+        ],
+        "startWeek": 9,
+        "endWeek": 12
+      },
+      {
+        "name": "专业方向课程设计",
+        "teacher": "肖芳雄",
+        "classroom": "程序设计与软件技术实验室(二分室)(科技楼2栋414)",
+        "week": 2,
+        "times": [
+          5,
+          6
+        ],
+        "startWeek": 13,
+        "endWeek": 16
+      },
+      {
+        "name": "专业方向课程设计",
+        "teacher": "肖芳雄",
+        "classroom": "程序设计与软件技术实验室(二分室)(科技楼2栋414)",
+        "week": 2,
+        "times": [
+          7,
+          8,
+          9
+        ],
+        "startWeek": 13,
+        "endWeek": 16
+      }
+    ]
+}

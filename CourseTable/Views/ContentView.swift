@@ -11,149 +11,170 @@ struct ContentView: View {
     @State private var courses: [Course] = []
     @State private var currentDate = Date()
     @State private var currentWeek = 1
-        
-    // 时间表配置
-    private let times: [(period: String, startTime: String, endTime: String)] = [
-            ("1", "08:30", "09:15"),
-            ("2", "09:20", "10:05"),
-            ("3", "10:25", "11:10"),
-            ("4", "11:15", "12:00"),
-            ("5", "13:30", "14:15"),
-            ("6", "14:20", "15:05"),
-            ("7", "15:25", "16:10"),
-            ("8", "16:15", "17:00"),
-            ("9", "17:05", "17:50"),
-            ("10", "18:30", "19:15"),
-            ("11", "19:20", "20:05"),
-            ("12", "20:10", "20:55")
-        ]
-    
-    @State private var gridData: [DayColumn] = []
+    @State private var config: Config? = nil
+    private var times: [(period: String, startTime: String, endTime: String)] {
+        guard let config = config else {
+            return [
+                ("1", "08:30", "09:15"),
+                ("2", "09:20", "10:05"),
+                ("3", "10:25", "11:10"),
+                ("4", "11:15", "12:00"),
+                ("5", "13:30", "14:15"),
+                ("6", "14:20", "15:05"),
+                ("7", "15:25", "16:10"),
+                ("8", "16:15", "17:00"),
+                ("9", "17:05", "17:50"),
+                ("10", "18:30", "19:15"),
+                ("11", "19:20", "20:05"),
+                ("12", "20:10", "20:55")
+            ]
+        }
+        return config.periods.map { (period: $0.period, startTime: $0.startTime, endTime: $0.endTime) }
+    }
     
     var body: some View {
         VStack(spacing: 0) {
             // 顶部标题栏
-            HeaderView(today: Date(), currentDate: $currentDate, currentWeek: $currentWeek)
+            HeaderView(
+                today: Date(),
+                currentDate: $currentDate,
+                currentWeek: $currentWeek,
+                maxWeeks: config?.totalWeeks ?? 20,
+                exportData: {
+                    struct ExportWrapper: Codable {
+                        let config: Config
+                        let courses: [Course]
+                    }
+                    
+                    guard let config = self.config else { return nil }
+                    let wrapper = ExportWrapper(config: config, courses: self.courses)
+                    
+                    do {
+                        let data = try JSONEncoder().encode(wrapper)
+                        return data
+                    } catch {
+                        print("导出编码失败: \(error)")
+                        return nil
+                    }
+                },
+                importData: { data in
+                    self.saveImportedData(data)
+                    self.decodeAndSetData(data)
+                    self.calculateCurrentWeek()
+                }
+            )
             
             // 主体内容
             MainContentView()
         }
         .onAppear(perform: loadData)
-        .onChange(of: currentWeek) { _, _ in
-            gridData = buildGridData()
-        }
     }
     
     private func MainContentView() -> some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 0) {
-                // 星期表头
-                WeekHeaderView(currentDate: currentDate)
-                
-                // 课程表格
+        VStack(spacing: 0) {
+            // 固定表头（不滚动）
+            WeekHeaderView(currentDate: currentDate)
+            
+            // 可滚动的课程内容
+            ScrollView(.vertical, showsIndicators: false) {
                 MergedCourseGridView(courses: courses, currentWeek: currentWeek, times: times)
             }
         }
     }
     
     private func loadData() {
-        //TODO: 这里实现数据加载逻辑
         loadCourses()
         calculateCurrentWeek()
         let mergedCourses = mergeConsecutiveCourses(courses)
         self.courses = mergedCourses
-        gridData = buildGridData()
     }
     
     private func loadCourses() {
-        guard let url = Bundle.main.url(forResource:"courses", withExtension: "json"),
-              let data = try? Data(contentsOf: url) else {
-                  print("无法加载courses.json")
-                  return
-              }
+        // 优先从 courseData 目录加载
+        if FileManager.default.fileExists(atPath: currentCourseFileURL.path) {
+            if let data = try? Data(contentsOf: currentCourseFileURL) {
+                decodeAndSetData(data)
+                return
+            }
+        }
         
+        // 首次启动：courses 保持为空
+        self.courses = []
+        self.config = nil
+    }
+
+    private func decodeAndSetData(_ data: Data) {
         struct Wrapper: Codable {
+            let config: Config
             let courses: [Course]
         }
         
-        if let wrapper = try? JSONDecoder().decode(Wrapper.self, from: data) {
+        do {
+            let wrapper = try JSONDecoder().decode(Wrapper.self, from: data)
+            self.config = wrapper.config
             self.courses = wrapper.courses
-        } else {
-            print("解码courses.json失败")
+        } catch {
+            print("解码失败: \(error)")
+            // 加载失败时清空数据
+            self.courses = []
+            self.config = nil
         }
     }
    
     private func calculateCurrentWeek() {
-        var calendar = Calendar.current
-        calendar.firstWeekday = 2 // 1=周日, 2=周一
-        calendar.minimumDaysInFirstWeek = 4 // ISO 标准：第一周至少包含4天
-        guard let semesterStart = calendar.date(from: DateComponents(year: 2025, month: 9, day: 8)) else {
-            print("无法创建学期开始日期")
+        // 使用 ISO 周（周一为每周第一天）
+        var isoCalendar = Calendar.current
+        isoCalendar.firstWeekday = 2
+        isoCalendar.minimumDaysInFirstWeek = 4
+        
+        guard let config = self.config else {
+            currentWeek = 1
+            if let monday = isoCalendar.date(from: isoCalendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())) {
+                currentDate = monday
+            }
+            return
+        }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "zh_CN")
+
+        guard let semesterStart = formatter.date(from: config.semesterStart) else {
+            print("无法解析 config 中的 semesterStart: \(config.semesterStart)")
             currentWeek = 1
             return
         }
+
         let today = Date()
-        // 计算从学期开始到今天的完整周数（包括本周）
-        let components = calendar.dateComponents([.weekOfYear], from: semesterStart, to: today)
-        let weeksElapsed = (components.weekOfYear ?? -1) + 1 // +1 因为第一周是 week 0
-        
-        // 限制在 1~20 周范围内
+        let components = isoCalendar.dateComponents([.weekOfYear], from: semesterStart, to: today)
+        let weeksElapsed = (components.weekOfYear ?? -1) + 1
+
         if weeksElapsed < 1 {
-             currentWeek = 1
-        } else if weeksElapsed > 20 {
-            currentWeek = 20
+            currentWeek = 1
+            // currentDate 设为学期开始日所在周的周一（即 semesterStart 本身，假设它已是周一）
+            if let firstMonday = isoCalendar.date(from: isoCalendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: semesterStart)) {
+                currentDate = firstMonday
+            } else {
+                currentDate = semesterStart
+            }
+        } else if weeksElapsed > config.totalWeeks {
+            // 已结课：跳转到最后一周
+            currentWeek = config.totalWeeks
+            // 👇 计算最后一周的周一
+            if let lastMonday = isoCalendar.date(byAdding: .weekOfYear, value: config.totalWeeks - 1, to: semesterStart) {
+                currentDate = lastMonday
+            } else {
+                currentDate = semesterStart // fallback
+            }
         } else {
+            // 学期中：显示当前周
             currentWeek = weeksElapsed
-        }
-        
-        // 同步 currentDate 到本周一（可选，但推荐）
-        if let monday = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)) {
-            currentDate = monday
+            if let thisMonday = isoCalendar.date(from: isoCalendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)) {
+                currentDate = thisMonday
+            }
         }
     }
 
-    private func buildGridData() -> [DayColumn] {
-        var columns = (1...7).map { DayColumn(day: $0) }
-        for day in 1...7 {
-            var dayCourses = courses.filter {
-                $0.week == day &&
-                currentWeek >= $0.startWeek &&
-                currentWeek <= $0.endWeek
-            }
-                .sorted { $0.times.first! < $1.times.first! }
-            
-            var usedTimes = Set<Int>()
-            var cells: [CellItem] = []
-            
-            for time in 1...12 {
-                if usedTimes.contains(time) {
-                    continue
-                }
-                if let course = dayCourses.first(where: { $0.times.contains(time) }) {
-                    // 找到连续节次范围
-                    let sortedTimes = course.times.sorted()
-                    guard let startIndex = sortedTimes.firstIndex(of: time) else { continue }
-                    
-                    var span = 1
-                    while startIndex + span < sortedTimes.count,
-                          sortedTimes[startIndex + span] == time + span {
-                        span += 1
-                    }
-                    
-                    // 标记这些节次已使用
-                    for t in time..<(time + span) {
-                        usedTimes.insert(t)
-                    }
-                    
-                    cells.append(.course(course, span: span))
-                } else {
-                    cells.append(.empty)
-                }
-            }
-            columns[day - 1].cells = cells
-        }
-        return columns
-    }
     private func mergeConsecutiveCourses(_ courses: [Course]) -> [Course] {
         // 按 day + name + teacher + classroom 分组
         let grouped = Dictionary(grouping: courses) { course in
@@ -188,6 +209,46 @@ struct ContentView: View {
         }
         
         return merged
+    }
+    
+    private func handleImportedData(_ data: Data) {
+        struct Wrapper: Codable {
+            let config: Config
+            let courses: [Course]
+        }
+        
+        do {
+            let wrapper = try JSONDecoder().decode(Wrapper.self, from: data)
+            
+            // 更新状态
+            DispatchQueue.main.async {
+                self.config = wrapper.config
+                self.courses = mergeConsecutiveCourses(wrapper.courses)
+                self.calculateCurrentWeek()  // 重新计算周数和日期
+            }
+        } catch {
+            print("导入解析失败: \(error)")
+        }
+    }
+    
+    private var courseDataDirectory: URL {
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        return documents.appendingPathComponent("courseData", isDirectory: true)
+    }
+
+    private var currentCourseFileURL: URL {
+        courseDataDirectory.appendingPathComponent("current_course.json")
+    }
+
+    private func ensureCourseDataDirectoryExists() {
+        if !FileManager.default.fileExists(atPath: courseDataDirectory.path) {
+            try? FileManager.default.createDirectory(at: courseDataDirectory, withIntermediateDirectories: true)
+        }
+    }
+
+    private func saveImportedData(_ data: Data) {
+        ensureCourseDataDirectoryExists()
+        try? data.write(to: currentCourseFileURL)
     }
 }
 
