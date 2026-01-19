@@ -12,6 +12,8 @@ struct ContentView: View {
     @State private var currentDate = Date()
     @State private var currentWeek = 1
     @State private var config: Config? = nil
+    @State private var showingCourseList = false
+    @State private var courseNames: [String] = []
     private var times: [(period: String, startTime: String, endTime: String)] {
         guard let config = config else {
             return [
@@ -57,17 +59,56 @@ struct ContentView: View {
                         return nil
                     }
                 },
-                importData: { data in
-                    self.saveImportedData(data)
+                importData: { data, name in
+                    self.saveImportedData(data, name: name)
                     self.decodeAndSetData(data)
                     self.calculateCurrentWeek()
+                    let mergedCourses = mergeConsecutiveCourses(self.courses)
+                    self.courses = mergedCourses
+                    self.courseNames = self.loadAllCourseNames()
+                },
+                showCourseList: {
+                    courseNames = loadAllCourseNames()
+                    showingCourseList = true
                 }
             )
             
             // 主体内容
             MainContentView()
         }
-        .onAppear(perform: loadData)
+        .onAppear {
+            loadData()
+            courseNames = loadAllCourseNames()
+        }
+        // 课程表选择弹窗
+        .sheet(isPresented: $showingCourseList) {
+            CourseSelectionView(
+                courseNames: $courseNames,  // 👈 改为 Binding
+                onSelect: { name in
+                    loadCourseByName(name)
+                    showingCourseList = false
+                },
+                onRename: { oldName, newName in
+                    renameCourse(oldName, to: newName)
+                    courseNames = loadAllCourseNames()  // 👈 重命名后刷新
+                },
+                onDelete: { name in
+                    deleteCourse(name)
+                    courseNames = loadAllCourseNames()
+                    
+                    // 重新加载课表
+                    if let firstName = courseNames.first {
+                        loadCourseByName(firstName)
+                    } else {
+                        DispatchQueue.main.async {
+                            self.courses = []
+                            self.config = nil
+                            self.calculateCurrentWeek()
+                        }
+                    }
+                }
+            )
+        }
     }
     
     private func MainContentView() -> some View {
@@ -246,14 +287,55 @@ struct ContentView: View {
         }
     }
 
-    private func saveImportedData(_ data: Data) {
+    private func saveImportedData(_ data: Data, name: String) {
         ensureCourseDataDirectoryExists()
-        try? data.write(to: currentCourseFileURL)
+        let safeName = name.replacingOccurrences(of: "/", with: "_") // 避免非法字符
+        let fileURL = courseDataDirectory.appendingPathComponent("\(safeName).json")
+        try? data.write(to: fileURL)
+    }
+    
+    private func loadAllCourseNames() -> [String] {
+        ensureCourseDataDirectoryExists()
+        do {
+            let files = try FileManager.default.contentsOfDirectory(at: courseDataDirectory, includingPropertiesForKeys: nil)
+            return files
+                .filter { $0.pathExtension == "json" }
+                .map { $0.deletingPathExtension().lastPathComponent }
+                .sorted()
+        } catch {
+            print("读取课程表列表失败: \(error)")
+            return []
+        }
+    }
+
+    private func loadCourseByName(_ name: String) {
+        let fileURL = courseDataDirectory.appendingPathComponent("\(name).json")
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        
+        if let data = try? Data(contentsOf: fileURL) {
+            decodeAndSetData(data)
+            calculateCurrentWeek()
+            let mergedCourses = mergeConsecutiveCourses(courses)
+            self.courses = mergedCourses
+        }
+    }
+    
+    private func renameCourse(_ oldName: String, to newName: String) {
+        let oldURL = courseDataDirectory.appendingPathComponent("\(oldName).json")
+        let newURL = courseDataDirectory.appendingPathComponent("\(newName).json")
+        
+        if FileManager.default.fileExists(atPath: oldURL.path) {
+            try? FileManager.default.moveItem(at: oldURL, to: newURL)
+        }
+    }
+
+    private func deleteCourse(_ name: String) {
+        let fileURL = courseDataDirectory.appendingPathComponent("\(name).json")
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            try? FileManager.default.removeItem(at: fileURL)
+        }
     }
 }
-
-
-    
 
 
 #Preview {

@@ -14,7 +14,8 @@ struct HeaderView: View {
     @Binding var currentWeek: Int
     let maxWeeks: Int
     let exportData: () -> Data?
-    let importData: (Data) -> Void
+    let importData: (Data, String) -> Void
+    let showCourseList: () -> Void
     
     @State private var showingAlert = false
     @State private var alertMessage = ""
@@ -52,7 +53,7 @@ struct HeaderView: View {
                 .tint(.primary)
                 
                 Button(action: {
-                    // TODO: 实现更多功能
+                    showCourseList()
                 }) {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 18))
@@ -140,7 +141,9 @@ struct HeaderView: View {
               
               do {
                   let data = try Data(contentsOf: fileURL)
-                  importData(data)
+
+                  let originalName = fileURL.deletingPathExtension().lastPathComponent
+                  importData(data, originalName)
               } catch {
                   showAlert("读取文件失败: \(error.localizedDescription)")
               }
