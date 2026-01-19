@@ -10,33 +10,51 @@ import SwiftUI
 struct WeekHeaderView: View {
     let currentDate: Date
     
-    var body: some View {
-        HStack(spacing: 0) {
-            // 左侧空白单元格
-            Text("")
-                .frame(width: 60, height: 50)
-            
-            // 星期表头（周一至周日）
-            ForEach(0..<7, id: \.self) { index in
-                Text(weekdayText(for: index))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical)
-                    .background(Color(.systemBackground))
-//                    .overlay(
-//                        Rectangle()
-//                            .frame(height: 1)
-//                            .foregroundColor(Color(.separator)),
-//                        alignment: .bottom
-//                    )
-//                    .overlay(
-//                        Rectangle()
-//                            .frame(width: 1)
-//                            .foregroundColor(Color(.separator)),
-//                        alignment: .trailing
-//                    )
+    private var weekdayDates: [Int] {
+        let calendar = Calendar.current
+        return (0..<7).map { offset in
+            if let date = calendar.date(byAdding: .day, value: offset, to: currentDate) {
+                return calendar.component(.day, from: date)
+            } else {
+                return -1 // 标记为不显示
             }
         }
-        .frame(height: 50)
+    }
+    
+    var body: some View {
+        VStack(spacing: 0){
+            HStack(spacing: 0) {
+                // 左侧空白单元格
+                Text("")
+                    .frame(width: 60, height: 30)
+                
+                // 星期表头（周一至周日）
+                ForEach(0..<7, id: \.self) { index in
+                    Text(weekdayText(for: index))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
+                        .background(Color(.systemBackground))
+                }
+            }
+            .frame(height: 30)
+            
+            // 第二行：日期数字（只周一到周五）
+            HStack(spacing: 0) {
+                Text("")
+                    .frame(width: 60, height: 30)
+                
+                ForEach(0..<7, id: \.self) { index in
+                    Text("\(weekdayDates[index])")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .multilineTextAlignment(.center)
+                        .padding(.vertical, 2)
+                        .background(Color(.systemBackground))
+                }
+            }
+            .frame(height: 30)
+        }
         .background(Color(.systemBackground))
     }
     

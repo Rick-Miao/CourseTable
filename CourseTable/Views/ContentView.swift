@@ -85,8 +85,30 @@ struct ContentView: View {
    
     private func calculateCurrentWeek() {
         // TODO: 计算当前是第几周
-        // 这里暂时设置为第1周
-        self.currentWeek = 1
+        let calendar = Calendar.current
+        guard let semesterStart = calendar.date(from: DateComponents(year: 2025, month: 9, day: 8)) else {
+            print("无法创建学期开始日期")
+            currentWeek = 1
+            return
+        }
+        let today = Date()
+        // 计算从学期开始到今天的完整周数（包括本周）
+        let components = calendar.dateComponents([.weekOfYear], from: semesterStart, to: today)
+        let weeksElapsed = (components.weekOfYear ?? -1) + 1 // +1 因为第一周是 week 0
+        
+        // 限制在 1~20 周范围内
+        if weeksElapsed < 1 {
+             currentWeek = 1
+        } else if weeksElapsed > 20 {
+            currentWeek = 20
+        } else {
+            currentWeek = weeksElapsed
+        }
+        
+        // 同步 currentDate 到本周一（可选，但推荐）
+        if let monday = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)) {
+            currentDate = monday
+        }
     }
 
     private func buildGridData() -> [DayColumn] {

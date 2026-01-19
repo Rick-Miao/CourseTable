@@ -26,15 +26,23 @@ struct HeaderView: View {
                 // 周数切换按钮（框架）
                 HStack(spacing: 15) {
                     Button("上一周") {
-                        // TODO: 切换周数逻辑
                         if currentWeek > 1 {
                             currentWeek -= 1
+                            // 👇 关键：currentDate 向前移 7 天
+                            if let newDate = Calendar.current.date(byAdding: .day, value: -7, to: currentDate) {
+                                currentDate = newDate
+                            }
                         }
                     }
                     
                     Button("下一周") {
-                        // TODO: 切换周数逻辑
-                        currentWeek += 1
+                        if currentWeek < 20 {
+                            currentWeek += 1
+                            // 👇 关键：currentDate 向后移 7 天
+                            if let newDate = Calendar.current.date(byAdding: .day, value: 7, to: currentDate) {
+                                currentDate = newDate
+                            }
+                        }
                     }
                 }
             }
