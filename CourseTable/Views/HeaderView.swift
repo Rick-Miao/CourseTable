@@ -8,14 +8,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-extension View {
-    func localToGlobal(_ rect: CGRect) -> CGRect {
-        let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
-        let window = windowScene?.windows.first
-        return window?.convert(rect, from: nil) ?? rect
-    }
-}
-
 struct HeaderView: View {
     let today: Date
     @Binding var currentDate: Date

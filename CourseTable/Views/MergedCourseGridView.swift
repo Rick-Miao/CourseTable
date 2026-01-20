@@ -35,10 +35,8 @@ struct MergedCourseGridView: View {
                                 .onTapGesture {
                                     selectedCourse = course
                                 }
-                        } else if isPartOfCourse(for: day, at: time) {
-                            Color.clear
                         } else {
-                            EmptyCellView()
+                            Color.clear
                         }
                     }
                 }

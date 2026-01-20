@@ -26,9 +26,9 @@ struct CourseSelectionView: View {
                         Text(displayName)
                         Spacer()
                     }
-                    .contentShape(Rectangle()) // 👈 确保整行可点击
+                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain) // 👈 去除默认按钮样式
+                .buttonStyle(.plain)
                 
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button(role: .destructive) {

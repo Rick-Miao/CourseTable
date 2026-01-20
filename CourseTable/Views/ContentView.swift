@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import WebKit
 
 struct ContentView: View {
     @State private var courses: [Course] = []
@@ -22,6 +23,10 @@ struct ContentView: View {
     @State private var showingImporter = false
     @State private var showingAlert = false
     @State private var alertMessage = ""
+    @State private var showingSchoolSelection = false
+    @State private var showingWebImporter = false
+    @State private var webBrowserURL: String? = nil
+    @StateObject private var webBrowserState = WebBrowserState()
     
     private let lastSelectedCourseKey = "LastSelectedCourseName"
     private var times: [(period: String, startTime: String, endTime: String)] {
@@ -43,6 +48,12 @@ struct ContentView: View {
         }
         return config.periods.map { (period: $0.period, startTime: $0.startTime, endTime: $0.endTime) }
     }
+    
+    private let schools: [School] = [
+        School(name: "百度", url: "https://www.baidu.com"),
+        School(name: "金陵科技学院（江宁校区）", url: "https://jwxt.jit.edu.cn"),
+        School(name: "金陵科技学院（幕府校区）", url: "https://jwxt.jit.edu.cn")
+    ]
     
     var body: some View {
         NavigationStack {
@@ -131,40 +142,71 @@ struct ContentView: View {
                 }
             }
             .overlay {
-                        if showingImportOptions {
-                            ZStack {
-                                Color.black.opacity(0.01)
-                                    .onTapGesture {
-                                        showingImportOptions = false
-                                    }
-                                
-                                ImportOptionsView(
-                                    onDismiss: {
-                                        showingImportOptions = false
-                                    },
-                                    onSchoolImport: {
-                                        showingImportOptions = false
-                                        // 通过环境对象或回调处理
-                                    },
-                                    onJsonImport: {
-                                        showingImportOptions = false
-                                        showingImporter = true
-                                    }
-                                )
-                                .frame(width: 200, height: 90)
-                                .offset(x: importButtonRect.midX - 200, y: importButtonRect.maxY - 380) // 导入方式偏移
+                if showingImportOptions {
+                    ZStack {
+                        Color.black.opacity(0.01)
+                            .onTapGesture {
+                                showingImportOptions = false
                             }
-                            .zIndex(1)
-                        }
+                        
+                        ImportOptionsView(
+                            onDismiss: {
+                                showingImportOptions = false
+                            },
+                            onSchoolImport: {
+                                showingImportOptions = false
+                                showingSchoolSelection = true
+                            },
+                            onJsonImport: {
+                                showingImportOptions = false
+                                showingImporter = true
+                            }
+                        )
+                        .frame(width: 200, height: 90)
+                        .offset(x: importButtonRect.midX - 200, y: importButtonRect.maxY - 380) // 导入方式偏移
                     }
-                    .fileImporter(
-                        isPresented: $showingImporter,
-                        allowedContentTypes: [UTType.json],
-                        onCompletion: handleImport
-                    )
-            
+                    .zIndex(1)
+                }
+            }
+            .fileImporter(
+                isPresented: $showingImporter,
+                allowedContentTypes: [UTType.json],
+                onCompletion: handleImport
+            )
+            .sheet(isPresented: $showingSchoolSelection) {
+                SchoolSelectionView(schools: schools) { selectedSchool in
+                    let cleanURL = selectedSchool.url.trimmingCharacters(in: .whitespaces)
+                    
+                    var finalURL = cleanURL
+                    if !finalURL.hasPrefix("http://") && !finalURL.hasPrefix("https://") {
+                        finalURL = "https://" + finalURL
+                    }
+                    // 验证 URL 是否有效
+                    if let url = URL(string: finalURL), UIApplication.shared.canOpenURL(url) {
+                        print("准备打开 URL: \(finalURL)")
+                        webBrowserState.openBrowser(with: finalURL)
+                    } else {
+                        print("无效的 URL: \(finalURL)")
+                        alertMessage = "无法打开此网址：\(finalURL)"
+                        showingAlert = true
+                    }
+                }
+            }
+            .sheet(isPresented: $webBrowserState.showingWebImporter) {
+                if let url = webBrowserState.urlToLoad {
+                    CustomWebBrowserView(initialURL: url)
+                        .onDisappear {
+                            // 浏览器关闭后重置状态
+                            webBrowserState.reset()
+                        }
+                } else {
+                    Text("URL 为空")
+                        .onAppear {
+                            print("错误：浏览器已显示但 URL 为空")
+                        }
+                }
+            }
         }
-        
     }
     
     private func MainContentView() -> some View {
@@ -406,7 +448,6 @@ struct ContentView: View {
           }
       }
 }
-
 
 #Preview {
     ContentView()

@@ -89,11 +89,7 @@ struct CourseEditView: View {
     }
     
     private func updateConfigInFile() {
-        let fileURL = FileManager.default
-            .urls(for: .documentDirectory, in: .userDomainMask)
-            .first!
-            .appendingPathComponent("courseData")
-            .appendingPathComponent("\(courseName).json")
+        let fileURL = FileHelper.courseDataDirectory.appendingPathComponent("\(courseName).json")
         
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
         
