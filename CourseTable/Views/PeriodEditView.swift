@@ -8,86 +8,96 @@
 import SwiftUI
 
 struct PeriodEditView: View {
-    @Environment(\.dismiss) private var dismiss
     @Binding var periods: [Config.Period]
-    @State private var showingStartTimePicker = false
-    @State private var showingEndTimePicker = false
-    @State private var selectedPeriodIndex = 0
+    @State private var expandedStartTimeIndex: Int? = nil
+    @State private var expandedEndTimeIndex: Int? = nil
     
     var body: some View {
-        NavigationStack {
-            List {
-                ForEach(0..<periods.count, id: \.self) { index in
+        List {
+            ForEach(0..<periods.count, id: \.self) { index in
+                Section {
                     HStack {
                         Text("第 \(periods[index].period) 节")
                             .font(.body)
                         
                         Spacer()
                         
-                        // 开始时间
                         Button(action: {
-                            selectedPeriodIndex = index
-                            showingStartTimePicker = true
+                            // 切换展开状态
+                            if expandedStartTimeIndex == index {
+                                expandedStartTimeIndex = nil
+                            } else {
+                                expandedStartTimeIndex = index
+                                expandedEndTimeIndex = nil // 关闭结束时间
+                            }
                         }) {
                             Text(periods[index].startTime)
                                 .foregroundColor(.blue)
-                                .frame(minWidth: 60, alignment: .trailing)
+                                .frame(width: 60, alignment: .trailing)
                         }
                         .buttonStyle(.plain)
                         
                         Text(" - ")
                             .foregroundColor(.secondary)
                         
-                        // 结束时间
                         Button(action: {
-                            selectedPeriodIndex = index
-                            showingEndTimePicker = true
+                            // 切换展开状态
+                            if expandedEndTimeIndex == index {
+                                expandedEndTimeIndex = nil
+                            } else {
+                                expandedEndTimeIndex = index
+                                expandedStartTimeIndex = nil // 关闭开始时间
+                            }
                         }) {
                             Text(periods[index].endTime)
                                 .foregroundColor(.blue)
-                                .frame(minWidth: 60, alignment: .leading)
+                                .frame(width: 60, alignment: .leading)
                         }
                         .buttonStyle(.plain)
                     }
                     .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-                }
-                .onDelete(perform: deletePeriods)
-                
-                Section {
-                    Button("添加新节次") {
-                        addNewPeriod()
+                    
+                    // 👇 开始时间 DatePicker（内联）
+                    if expandedStartTimeIndex == index {
+                        DatePicker(
+                            "开始时间",
+                            selection: Binding(
+                                get: { parseTime(periods[index].startTime) },
+                                set: { newTime in
+                                    periods[index].startTime = formatTime(newTime)
+                                }
+                            ),
+                            displayedComponents: [.hourAndMinute]
+                        )
+                        .datePickerStyle(WheelDatePickerStyle())
+                    }
+                    
+                    // 👇 结束时间 DatePicker（内联）
+                    if expandedEndTimeIndex == index {
+                        DatePicker(
+                            "结束时间",
+                            selection: Binding(
+                                get: { parseTime(periods[index].endTime) },
+                                set: { newTime in
+                                    periods[index].endTime = formatTime(newTime)
+                                }
+                            ),
+                            displayedComponents: [.hourAndMinute]
+                        )
+                        .datePickerStyle(WheelDatePickerStyle())
                     }
                 }
             }
-            .navigationTitle("上课时间")
-            .navigationBarTitleDisplayMode(.inline)
+            .onDelete(perform: deletePeriods)
             
-            // 开始时间选择器
-            .sheet(isPresented: $showingStartTimePicker) {
-                TimePickerView(
-                    title: "开始时间",
-                    currentTime: Binding(
-                        get: { parseTime(periods[selectedPeriodIndex].startTime) },
-                        set: { newTime in
-                            periods[selectedPeriodIndex].startTime = formatTime(newTime)
-                        }
-                    )
-                )
-            }
-            
-            // 结束时间选择器
-            .sheet(isPresented: $showingEndTimePicker) {
-                TimePickerView(
-                    title: "结束时间",
-                    currentTime: Binding(
-                        get: { parseTime(periods[selectedPeriodIndex].endTime) },
-                        set: { newTime in
-                            periods[selectedPeriodIndex].endTime = formatTime(newTime)
-                        }
-                    )
-                )
+            Section {
+                Button("添加新节次") {
+                    addNewPeriod()
+                }
             }
         }
+        .navigationTitle("上课时间")
+        .navigationBarTitleDisplayMode(.inline)
     }
     
     private func addNewPeriod() {
@@ -106,19 +116,13 @@ struct PeriodEditView: View {
             periods[i].period = "\(i + 1)"
         }
     }
-    
-    // 时间解析
     private func parseTime(_ timeString: String) -> Date {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.date(from: timeString) ?? Date()
+        return DateFormatter.HHmm.date(from: timeString) ?? Date()
     }
     
     // 时间格式化
     private func formatTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
+        return DateFormatter.HHmm.string(from: date)
     }
 }
 
@@ -126,34 +130,39 @@ struct PeriodEditView: View {
 struct TimePickerView: View {
     let title: String
     @Binding var currentTime: Date
-    @Environment(\.dismiss) private var dismiss
+    let onDismiss: () -> Void
     
     var body: some View {
-        NavigationStack {
-            VStack {
+            VStack(spacing: 16) {
+                Text(title)
+                    .font(.headline)
+                    .padding(.top, 8)
+                
                 DatePicker(
                     "",
                     selection: $currentTime,
                     displayedComponents: [.hourAndMinute]
                 )
                 .datePickerStyle(WheelDatePickerStyle())
-                .padding()
+                .frame(height: 120)
                 
-                Button("完成") {
-                    dismiss()
-                }
-                .font(.headline)
-                .padding()
-            }
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                HStack {
                     Button("取消") {
-                        dismiss()
+                        onDismiss()
                     }
+                    .tint(.secondary)
+                    
+                    Spacer()
+                    
+                    Button("确定") {
+                        onDismiss()
+                    }
+                    .tint(.primary)
                 }
+                .font(.subheadline)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
             }
+            .frame(width: 280, height: 220)
         }
-    }
 }

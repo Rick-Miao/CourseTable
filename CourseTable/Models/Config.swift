@@ -47,3 +47,8 @@ struct Config: Codable {
         }
     }
 }
+
+struct ConfigWrapper: Codable {
+    var config: Config
+    var courses: [Course]
+}

@@ -8,18 +8,26 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+extension View {
+    func localToGlobal(_ rect: CGRect) -> CGRect {
+        let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
+        let window = windowScene?.windows.first
+        return window?.convert(rect, from: nil) ?? rect
+    }
+}
+
 struct HeaderView: View {
     let today: Date
     @Binding var currentDate: Date
     @Binding var currentWeek: Int
+    @Binding var showingImportOptions: Bool
+    @Binding var importButtonRect: CGRect
     let maxWeeks: Int
     let exportData: () -> Data?
     let importData: (Data, String) -> Void
     let showCourseList: () -> Void
-    
-    @State private var showingAlert = false
-    @State private var alertMessage = ""
-    @State private var showingImporter = false
+    let onShowAlert: (String) -> Void
+    let config: Config?
     
     var body: some View {
         VStack(spacing: 8) {
@@ -31,17 +39,25 @@ struct HeaderView: View {
                 Spacer()
                 
                 Button(action: {
-                    showingImporter = true
+                    showingImportOptions = true
                 }) {
                     Image(systemName: "square.and.arrow.down")
                         .font(.system(size: 18))
                         .padding(8)
                 }
                 .tint(.primary)
-                .fileImporter(
-                    isPresented: $showingImporter,
-                    allowedContentTypes: [UTType.json],
-                    onCompletion: handleImport)
+                .background(
+                    GeometryReader { geometry in
+                        Color.clear
+                            .onAppear {
+                                importButtonRect = geometry.frame(in: .global)
+                            }
+                            .onChange(of: geometry.frame(in: .global)) { _, newRect in
+                                importButtonRect = newRect
+                            }
+                    }
+                )
+                
                 
                 Button(action: {
                     export()
@@ -63,10 +79,8 @@ struct HeaderView: View {
             }
             .padding(.horizontal)
         
-            
-            
             HStack {
-                Text("第\(currentWeek)周")
+                Text(weekStatusText)
                     .font(.system(size: 16, weight: .medium))
                 
                 Spacer()
@@ -96,17 +110,43 @@ struct HeaderView: View {
         }
         .padding(.vertical)
         .background(Color(.systemBackground))
-        .alert(alertMessage, isPresented: $showingAlert) { }
+    }
+    
+    private var weekStatusText: String {
+        guard let config = config else {
+            return "第\(currentWeek)周"
+        }
+        
+        let formatter = DateFormatter.yyyyMMdd
+        guard let semesterStart = formatter.date(from: config.semesterStart) else {
+            return "第\(currentWeek)周"
+        }
+        
+        let today = Date()
+        let calendar = Calendar.current
+        
+        // 计算学期第一天（周一）
+        let semesterFirstDay = semesterStart
+        
+        // 计算学期最后一天
+        let semesterLastDay = calendar.date(byAdding: .day, value: (config.totalWeeks * 7) - 1, to: semesterFirstDay) ?? semesterFirstDay
+        
+        if today < semesterFirstDay {
+            return "第1周（学期未开始）"
+        } else if today > semesterLastDay {
+            return "第\(config.totalWeeks)周（学期已结束）"
+        } else {
+            return "第\(currentWeek)周"
+        }
     }
     
     private func export() {
         guard let data = exportData() else {
-            showAlert("无法生成课程表数据")
+            // 需要通过回调处理 alert
+            onShowAlert("无法生成课程表数据")
             return
         }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyyMMdd_HHmm"
-        let fileName = "CourseTable_\(formatter.string(from: Date())).json"
+        let fileName = "CourseTable_\(DateFormatter.exportFileName.string(from: Date())).json"
         let fileURL = FileManager.default.temporaryDirectory.appending(path: fileName)
         
         do {
@@ -126,31 +166,6 @@ struct HeaderView: View {
     }
     
     private func showAlert(_ message: String) {
-        alertMessage = message
-        showingAlert = true
+        onShowAlert(message)
     }
-    
-    private func handleImport(result: Result<URL, Error>) {
-          switch result {
-          case .success(let fileURL):
-              let isAccessGranted = fileURL.startAccessingSecurityScopedResource()
-              
-              defer {
-                  if isAccessGranted {
-                      fileURL.stopAccessingSecurityScopedResource()  // 👈 释放权限
-                  }
-              }
-              
-              do {
-                  let data = try Data(contentsOf: fileURL)
-
-                  let originalName = fileURL.deletingPathExtension().lastPathComponent
-                  importData(data, originalName)
-              } catch {
-                  showAlert("读取文件失败: \(error.localizedDescription)")
-              }
-          case .failure(let error):
-              showAlert("导入取消或失败: \(error.localizedDescription)")
-          }
-      }
 }

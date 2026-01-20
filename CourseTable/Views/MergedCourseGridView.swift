@@ -97,4 +97,25 @@ struct MergedCourseGridView: View {
     }
 }
 
-
+struct TimeColumnView: View {
+    let timeIndex: Int
+    let times: [(period: String, startTime: String, endTime: String)]
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(times[timeIndex].period)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.primary)
+            
+            Text(times[timeIndex].startTime)
+                .font(.system(size: 10))
+                .foregroundColor(.secondary)
+            
+            Text(times[timeIndex].endTime)
+                .font(.system(size: 10))
+                .foregroundColor(.secondary)
+        }
+        .frame(width: 60)
+        .background(Color(.systemBackground))
+    }
+}

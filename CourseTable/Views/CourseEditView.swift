@@ -15,29 +15,18 @@ struct CourseEditView: View {
     @State private var totalWeeks: Int
     @State private var periods: [Config.Period]
     @State private var hasInitialized = false
-    
+       
     private let initialSemesterStart: Date
     private let initialTotalWeeks: Int
     private let initialPeriods: [Config.Period]
     
-    // 日期格式化器
-    private let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.locale = Locale(identifier: "zh_CN")
-        return formatter
-    }()
     
     init(originalName: String, config: Config) {
         self.originalName = originalName
         self.courseName = originalName
         
         // 解析初始日期
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.locale = Locale(identifier: "zh_CN")
-        
-        self.initialSemesterStart = formatter.date(from: config.semesterStart) ?? Date()
+        self.initialSemesterStart = DateFormatter.yyyyMMdd.date(from: config.semesterStart) ?? Date()
         self.initialTotalWeeks = config.totalWeeks
         self.initialPeriods = config.periods
         
@@ -85,11 +74,7 @@ struct CourseEditView: View {
     private func saveChanges() {
         // 1. 重命名文件
         if courseName != originalName {
-            let oldURL = FileManager.default
-                .urls(for: .documentDirectory, in: .userDomainMask)
-                .first!
-                .appendingPathComponent("courseData")
-                .appendingPathComponent("\(originalName).json")
+            let oldURL = FileHelper.courseDataDirectory.appendingPathComponent("\(courseName).json")
             
             let newURL = oldURL.deletingLastPathComponent()
                 .appendingPathComponent("\(courseName).json")
@@ -117,7 +102,7 @@ struct CourseEditView: View {
             var wrapper = try JSONDecoder().decode(ConfigWrapper.self, from: data)
             
             // 更新配置
-            wrapper.config.semesterStart = dateFormatter.string(from: semesterStart)
+            wrapper.config.semesterStart = DateFormatter.yyyyMMdd.string(from: semesterStart)
             wrapper.config.totalWeeks = totalWeeks
             wrapper.config.periods = periods
             
@@ -128,10 +113,4 @@ struct CourseEditView: View {
             print("更新配置失败: \(error)")
         }
     }
-}
-
-// 辅助类型
-private struct ConfigWrapper: Codable {
-    var config: Config
-    var courses: [Course]
 }

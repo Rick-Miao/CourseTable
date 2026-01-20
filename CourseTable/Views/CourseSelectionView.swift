@@ -64,31 +64,3 @@ struct CourseSelectionView: View {
     }
 
 }
-
-// 右滑操作组件
-struct SwipeActions: View {
-    let name: String
-    let onRename: (String) -> Void
-    let onDelete: (String) -> Void
-    
-    var body: some View {
-        HStack {
-            Text(name)
-            Spacer()
-        }
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button(role: .destructive) {
-                onDelete(name)
-            } label: {
-                Image(systemName: "trash")
-                    .background(Color(.red))
-            }
-            
-            Button {
-                onRename(name)
-            } label: {
-                Image(systemName: "pencil")
-            }
-        }
-    }
-}

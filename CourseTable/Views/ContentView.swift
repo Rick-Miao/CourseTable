@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ContentView: View {
     @State private var courses: [Course] = []
@@ -16,6 +17,11 @@ struct ContentView: View {
     @State private var courseNames: [String] = []
     @State private var showingEditView = false
     @State private var editCourseName = ""
+    @State private var showingImportOptions = false
+    @State private var importButtonRect = CGRect()
+    @State private var showingImporter = false
+    @State private var showingAlert = false
+    @State private var alertMessage = ""
     
     private let lastSelectedCourseKey = "LastSelectedCourseName"
     private var times: [(period: String, startTime: String, endTime: String)] {
@@ -46,15 +52,12 @@ struct ContentView: View {
                     today: Date(),
                     currentDate: $currentDate,
                     currentWeek: $currentWeek,
+                    showingImportOptions: $showingImportOptions,
+                    importButtonRect: $importButtonRect,
                     maxWeeks: config?.totalWeeks ?? 20,
                     exportData: {
-                        struct ExportWrapper: Codable {
-                            let config: Config
-                            let courses: [Course]
-                        }
-                        
                         guard let config = self.config else { return nil }
-                        let wrapper = ExportWrapper(config: config, courses: self.courses)
+                        let wrapper = ConfigWrapper(config: config, courses: self.courses)
                         
                         do {
                             let data = try JSONEncoder().encode(wrapper)
@@ -75,8 +78,14 @@ struct ContentView: View {
                     showCourseList: {
                         courseNames = loadAllCourseNames()
                         showingCourseList = true
-                    }
+                    },
+                    onShowAlert: { message in
+                        alertMessage = message
+                        showingAlert = true
+                    },
+                    config: config
                 )
+                .alert(alertMessage, isPresented: $showingAlert) { }
                 
                 // 主体内容
                 MainContentView()
@@ -121,6 +130,39 @@ struct ContentView: View {
                     CourseEditView(originalName: editCourseName, config: config)
                 }
             }
+            .overlay {
+                        if showingImportOptions {
+                            ZStack {
+                                Color.black.opacity(0.01)
+                                    .onTapGesture {
+                                        showingImportOptions = false
+                                    }
+                                
+                                ImportOptionsView(
+                                    onDismiss: {
+                                        showingImportOptions = false
+                                    },
+                                    onSchoolImport: {
+                                        showingImportOptions = false
+                                        // 通过环境对象或回调处理
+                                    },
+                                    onJsonImport: {
+                                        showingImportOptions = false
+                                        showingImporter = true
+                                    }
+                                )
+                                .frame(width: 200, height: 90)
+                                .offset(x: importButtonRect.midX - 200, y: importButtonRect.maxY - 380) // 导入方式偏移
+                            }
+                            .zIndex(1)
+                        }
+                    }
+                    .fileImporter(
+                        isPresented: $showingImporter,
+                        allowedContentTypes: [UTType.json],
+                        onCompletion: handleImport
+                    )
+            
         }
         
     }
@@ -147,7 +189,7 @@ struct ContentView: View {
     private func loadCourses() {
         // 1. 尝试加载最后选择的课表
         if let lastName = UserDefaults.standard.string(forKey: lastSelectedCourseKey) {
-            let fileURL = courseDataDirectory.appendingPathComponent("\(lastName).json")
+            let fileURL = FileHelper.courseDataDirectory.appendingPathComponent("\(lastName).json")
             if FileManager.default.fileExists(atPath: fileURL.path) {
                 if let data = try? Data(contentsOf: fileURL) {
                     decodeAndSetData(data)
@@ -172,13 +214,8 @@ struct ContentView: View {
 
 
     private func decodeAndSetData(_ data: Data) {
-        struct Wrapper: Codable {
-            let config: Config
-            let courses: [Course]
-        }
-        
         do {
-            let wrapper = try JSONDecoder().decode(Wrapper.self, from: data)
+            let wrapper = try JSONDecoder().decode(ConfigWrapper.self, from: data)
             self.config = wrapper.config
             self.courses = wrapper.courses
         } catch {
@@ -203,11 +240,7 @@ struct ContentView: View {
             return
         }
 
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.locale = Locale(identifier: "zh_CN")
-
-        guard let semesterStart = formatter.date(from: config.semesterStart) else {
+        guard let semesterStart = DateFormatter.yyyyMMdd.date(from: config.semesterStart) else {
             print("无法解析 config 中的 semesterStart: \(config.semesterStart)")
             currentWeek = 1
             return
@@ -280,13 +313,8 @@ struct ContentView: View {
     }
     
     private func handleImportedData(_ data: Data) {
-        struct Wrapper: Codable {
-            let config: Config
-            let courses: [Course]
-        }
-        
         do {
-            let wrapper = try JSONDecoder().decode(Wrapper.self, from: data)
+            let wrapper = try JSONDecoder().decode(ConfigWrapper.self, from: data)
             
             // 更新状态
             DispatchQueue.main.async {
@@ -298,29 +326,18 @@ struct ContentView: View {
             print("导入解析失败: \(error)")
         }
     }
-    
-    private var courseDataDirectory: URL {
-        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        return documents.appendingPathComponent("courseData", isDirectory: true)
-    }
-
-    private func ensureCourseDataDirectoryExists() {
-        if !FileManager.default.fileExists(atPath: courseDataDirectory.path) {
-            try? FileManager.default.createDirectory(at: courseDataDirectory, withIntermediateDirectories: true)
-        }
-    }
 
     private func saveImportedData(_ data: Data, name: String) {
-        ensureCourseDataDirectoryExists()
+        FileHelper.ensureCourseDataDirectoryExists()
         let safeName = name.replacingOccurrences(of: "/", with: "_") // 避免非法字符
-        let fileURL = courseDataDirectory.appendingPathComponent("\(safeName).json")
+        let fileURL = FileHelper.courseDataDirectory.appendingPathComponent("\(safeName).json")
         try? data.write(to: fileURL)
     }
     
     private func loadAllCourseNames() -> [String] {
-        ensureCourseDataDirectoryExists()
+        FileHelper.ensureCourseDataDirectoryExists()
         do {
-            let files = try FileManager.default.contentsOfDirectory(at: courseDataDirectory, includingPropertiesForKeys: nil)
+            let files = try FileManager.default.contentsOfDirectory(at: FileHelper.courseDataDirectory, includingPropertiesForKeys: nil)
             return files
                 .filter { $0.pathExtension == "json" }
                 .map { $0.deletingPathExtension().lastPathComponent }
@@ -332,7 +349,7 @@ struct ContentView: View {
     }
 
     private func loadCourseByName(_ name: String) {
-        let fileURL = courseDataDirectory.appendingPathComponent("\(name).json")
+        let fileURL = FileHelper.courseDataDirectory.appendingPathComponent("\(name).json")
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
         
         if let data = try? Data(contentsOf: fileURL) {
@@ -344,8 +361,8 @@ struct ContentView: View {
     }
     
     private func renameCourse(_ oldName: String, to newName: String) {
-        let oldURL = courseDataDirectory.appendingPathComponent("\(oldName).json")
-        let newURL = courseDataDirectory.appendingPathComponent("\(newName).json")
+        let oldURL = FileHelper.courseDataDirectory.appendingPathComponent("\(oldName).json")
+        let newURL = FileHelper.courseDataDirectory.appendingPathComponent("\(newName).json")
         
         if FileManager.default.fileExists(atPath: oldURL.path) {
             try? FileManager.default.moveItem(at: oldURL, to: newURL)
@@ -353,11 +370,41 @@ struct ContentView: View {
     }
 
     private func deleteCourse(_ name: String) {
-        let fileURL = courseDataDirectory.appendingPathComponent("\(name).json")
+        let fileURL = FileHelper.courseDataDirectory.appendingPathComponent("\(name).json")
         if FileManager.default.fileExists(atPath: fileURL.path) {
             try? FileManager.default.removeItem(at: fileURL)
         }
     }
+    
+    private func handleImport(result: Result<URL, Error>) {
+          switch result {
+          case .success(let fileURL):
+              let isAccessGranted = fileURL.startAccessingSecurityScopedResource()
+              
+              defer {
+                  if isAccessGranted {
+                      fileURL.stopAccessingSecurityScopedResource()  // 释放权限
+                  }
+              }
+              
+              do {
+                  let data = try Data(contentsOf: fileURL)
+                  let originalName = fileURL.deletingPathExtension().lastPathComponent
+                  saveImportedData(data, name: originalName)
+                  decodeAndSetData(data)
+                  calculateCurrentWeek()
+                  let mergedCourses = mergeConsecutiveCourses(courses)
+                  self.courses = mergedCourses
+                  self.courseNames = loadAllCourseNames()
+              } catch {
+                  alertMessage = "读取文件失败: \(error.localizedDescription)"
+                  showingAlert = true
+              }
+          case .failure(let error):
+              alertMessage = "导入取消或失败: \(error.localizedDescription)"
+              showingAlert = true
+          }
+      }
 }
 
 

@@ -22,10 +22,7 @@ struct WeekHeaderView: View {
     }
     
     private var monthString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "M"
-        formatter.locale = Locale(identifier: "zh_CN")
-        return formatter.string(from: currentDate)
+        return DateFormatter.monthNumber.string(from: currentDate)
     }
     
     var body: some View {

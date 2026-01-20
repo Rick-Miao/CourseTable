@@ -22,3 +22,31 @@ extension Date {
         return weekdays[weekday - 1]
     }
 }
+
+extension DateFormatter {
+    static let yyyyMMdd: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "zh_CN")
+        return formatter
+    }()
+    
+    static let HHmm: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }()
+    
+    static let monthNumber: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M"
+        formatter.locale = Locale(identifier: "zh_CN")
+        return formatter
+    }()
+    
+    static let exportFileName: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd_HHmm"
+        return formatter
+    }()
+}
