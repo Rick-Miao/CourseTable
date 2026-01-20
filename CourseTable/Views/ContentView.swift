@@ -14,6 +14,8 @@ struct ContentView: View {
     @State private var config: Config? = nil
     @State private var showingCourseList = false
     @State private var courseNames: [String] = []
+    @State private var showingEditView = false
+    @State private var editCourseName = ""
     
     private let lastSelectedCourseKey = "LastSelectedCourseName"
     private var times: [(period: String, startTime: String, endTime: String)] {
@@ -37,81 +39,90 @@ struct ContentView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // 顶部标题栏
-            HeaderView(
-                today: Date(),
-                currentDate: $currentDate,
-                currentWeek: $currentWeek,
-                maxWeeks: config?.totalWeeks ?? 20,
-                exportData: {
-                    struct ExportWrapper: Codable {
-                        let config: Config
-                        let courses: [Course]
+        NavigationStack {
+            VStack(spacing: 0) {
+                // 顶部标题栏
+                HeaderView(
+                    today: Date(),
+                    currentDate: $currentDate,
+                    currentWeek: $currentWeek,
+                    maxWeeks: config?.totalWeeks ?? 20,
+                    exportData: {
+                        struct ExportWrapper: Codable {
+                            let config: Config
+                            let courses: [Course]
+                        }
+                        
+                        guard let config = self.config else { return nil }
+                        let wrapper = ExportWrapper(config: config, courses: self.courses)
+                        
+                        do {
+                            let data = try JSONEncoder().encode(wrapper)
+                            return data
+                        } catch {
+                            print("导出编码失败: \(error)")
+                            return nil
+                        }
+                    },
+                    importData: { data, name in
+                        self.saveImportedData(data, name: name)
+                        self.decodeAndSetData(data)
+                        self.calculateCurrentWeek()
+                        let mergedCourses = mergeConsecutiveCourses(self.courses)
+                        self.courses = mergedCourses
+                        self.courseNames = self.loadAllCourseNames()
+                    },
+                    showCourseList: {
+                        courseNames = loadAllCourseNames()
+                        showingCourseList = true
                     }
+                )
+                
+                // 主体内容
+                MainContentView()
+            }
+            .onAppear {
+                loadData()
+                courseNames = loadAllCourseNames()
+            }
+            // 课程表选择弹窗
+            .sheet(isPresented: $showingCourseList) {
+                CourseSelectionView(
+                    courseNames: $courseNames,
+                    onSelect: { name in
+                        loadCourseByName(name)
+                        showingCourseList = false
+                        UserDefaults.standard.set(name, forKey: lastSelectedCourseKey)
+                    },
+                    onEdit: { name in
+                        editCourseName = name
+                        showingCourseList = false
+                        showingEditView = true
+                    },
+                    onDelete: { name in
+                        deleteCourse(name)
+                        courseNames = loadAllCourseNames()
                     
-                    guard let config = self.config else { return nil }
-                    let wrapper = ExportWrapper(config: config, courses: self.courses)
-                    
-                    do {
-                        let data = try JSONEncoder().encode(wrapper)
-                        return data
-                    } catch {
-                        print("导出编码失败: \(error)")
-                        return nil
-                    }
-                },
-                importData: { data, name in
-                    self.saveImportedData(data, name: name)
-                    self.decodeAndSetData(data)
-                    self.calculateCurrentWeek()
-                    let mergedCourses = mergeConsecutiveCourses(self.courses)
-                    self.courses = mergedCourses
-                    self.courseNames = self.loadAllCourseNames()
-                },
-                showCourseList: {
-                    courseNames = loadAllCourseNames()
-                    showingCourseList = true
-                }
-            )
-            
-            // 主体内容
-            MainContentView()
-        }
-        .onAppear {
-            loadData()
-            courseNames = loadAllCourseNames()
-        }
-        // 课程表选择弹窗
-        .sheet(isPresented: $showingCourseList) {
-            CourseSelectionView(
-                courseNames: $courseNames,
-                onSelect: { name in
-                    loadCourseByName(name)
-                    showingCourseList = false
-                    UserDefaults.standard.set(name, forKey: lastSelectedCourseKey)
-                },
-                onRename: { oldName, newName in
-                    renameCourse(oldName, to: newName)
-                    courseNames = loadAllCourseNames()
-                },
-                onDelete: { name in
-                    deleteCourse(name)
-                    courseNames = loadAllCourseNames()
-                    
-                    // 重新加载课表
-                    if let firstName = courseNames.first {
-                        loadCourseByName(firstName)
-                    } else {
-                        DispatchQueue.main.async {
-                            self.courses = []
-                            self.config = nil
-                            self.calculateCurrentWeek()
+                        // 重新加载课表
+                        if let firstName = courseNames.first {
+                            loadCourseByName(firstName)
+                        } else {
+                            DispatchQueue.main.async {
+                                self.courses = []
+                                self.config = nil
+                                self.calculateCurrentWeek()
+                            }
                         }
                     }
+                )
+            }
+            .navigationDestination(isPresented: $showingEditView) {
+                if let config = self.config {
+                    CourseEditView(originalName: editCourseName, config: config)
                 }
-            )
+            }
         }
+        
     }
     
     private func MainContentView() -> some View {

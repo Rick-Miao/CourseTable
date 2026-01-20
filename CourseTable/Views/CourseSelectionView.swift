@@ -11,12 +11,8 @@ struct CourseSelectionView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var courseNames: [String]
     let onSelect: (String) -> Void
-    let onRename: (String, String) -> Void
+    let onEdit: (String) -> Void
     let onDelete: (String) -> Void
-
-    @State private var showingRenameAlert = false
-    @State private var currentName = ""
-    @State private var newName = ""
     
     var body: some View {
         NavigationStack {
@@ -42,7 +38,7 @@ struct CourseSelectionView: View {
                     }
                     
                     Button {
-                        startRename(fullName)
+                        onEdit(fullName)
                     } label: {
                         Image(systemName: "pencil")
                     }
@@ -57,16 +53,6 @@ struct CourseSelectionView: View {
                     }
                 }
             }
-            // 重命名弹窗
-            .alert("重命名课程表", isPresented: $showingRenameAlert) {
-                TextField("新名称", text: $newName)
-                Button("取消", role: .cancel) { }
-                Button("确定") {
-                    onRename(currentName, newName)
-                }
-            } message: {
-                Text("请输入新名称")
-            }
         }
     }
     
@@ -76,12 +62,7 @@ struct CourseSelectionView: View {
         }
         return fullName
     }
-    
-    private func startRename(_ name: String) {
-        currentName = name
-        newName = name
-        showingRenameAlert = true
-    }
+
 }
 
 // 右滑操作组件
