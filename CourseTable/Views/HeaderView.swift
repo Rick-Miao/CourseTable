@@ -114,9 +114,11 @@ struct HeaderView: View {
             
             // 调用 UIKit 分享
             DispatchQueue.main.async {
-                guard let rootVC = UIApplication.shared.windows.first?.rootViewController else { return }
-                let activityVC = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
-                rootVC.present(activityVC, animated: true)
+                if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                   let rootVC = scene.windows.first?.rootViewController {
+                    let activityVC = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+                    rootVC.present(activityVC, animated: true)
+                }
             }
         } catch {
             showAlert("导出失败: \(error.localizedDescription)")
