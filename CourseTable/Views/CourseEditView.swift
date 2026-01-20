@@ -72,24 +72,29 @@ struct CourseEditView: View {
     }
     
     private func saveChanges() {
-        // 1. 重命名文件
-        if courseName != originalName {
-            let oldURL = FileHelper.courseDataDirectory.appendingPathComponent("\(courseName).json")
-            
-            let newURL = oldURL.deletingLastPathComponent()
-                .appendingPathComponent("\(courseName).json")
-            
-            try? FileManager.default.moveItem(at: oldURL, to: newURL)
+        // 1. 先更新配置文件内容
+        updateConfigInFile()
         
+        // 2. 如果名称改变，再重命名文件
+        if courseName != originalName {
+            let oldURL = FileHelper.courseDataDirectory.appendingPathComponent("\(originalName).json")
+            let newURL = FileHelper.courseDataDirectory.appendingPathComponent("\(courseName).json")
+            
+            // 删除可能已存在的同名文件
+            if FileManager.default.fileExists(atPath: newURL.path) {
+                try? FileManager.default.removeItem(at: newURL)
+            }
+            
+            // 重命名文件
+            try? FileManager.default.moveItem(at: oldURL, to: newURL)
+            
+            // 更新最后选择的课表
             UserDefaults.standard.set(courseName, forKey: "LastSelectedCourseName")
         }
-        
-        // 2. 更新 JSON 中的 config
-        updateConfigInFile()
     }
     
     private func updateConfigInFile() {
-        let fileURL = FileHelper.courseDataDirectory.appendingPathComponent("\(courseName).json")
+        let fileURL = FileHelper.courseDataDirectory.appendingPathComponent("\(originalName).json")
         
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
         
@@ -102,7 +107,7 @@ struct CourseEditView: View {
             wrapper.config.totalWeeks = totalWeeks
             wrapper.config.periods = periods
             
-            // 保存回文件
+            // 保存回文件（此时仍用原文件名）
             let updatedData = try JSONEncoder().encode(wrapper)
             try updatedData.write(to: fileURL)
         } catch {

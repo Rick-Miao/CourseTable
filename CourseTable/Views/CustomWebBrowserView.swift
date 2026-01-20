@@ -23,6 +23,7 @@ class CustomWebBrowserViewController: UIViewController {
     private var webView: WKWebView!
     private var urlTextField: UITextField!
     private var progressView: UIProgressView!
+    private var extractButton: UIButton!
     
     private let initialURL: String
     private let onDismiss: () -> Void
@@ -80,6 +81,18 @@ class CustomWebBrowserViewController: UIViewController {
         webView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(webView)
         
+        // 6. 抓取按钮
+        let extractButton = UIButton(type: .system)
+        extractButton.setTitle("抓取页面", for: .normal)
+        extractButton.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+        extractButton.backgroundColor = .systemBlue
+        extractButton.setTitleColor(.white, for: .normal)
+        extractButton.layer.cornerRadius = 8
+        extractButton.clipsToBounds = true
+        extractButton.addTarget(self, action: #selector(extractPageContent), for: .touchUpInside) // 👈 绑定事件
+        extractButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(extractButton)
+        
         // 布局约束
         NSLayoutConstraint.activate([
             // 网址容器
@@ -106,8 +119,14 @@ class CustomWebBrowserViewController: UIViewController {
             progressView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             progressView.heightAnchor.constraint(equalToConstant: 3),
             
-            // WebView
-            webView.topAnchor.constraint(equalTo: progressView.bottomAnchor),
+            // 抓取按钮
+            extractButton.topAnchor.constraint(equalTo: progressView.bottomAnchor, constant: 8),
+            extractButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            extractButton.widthAnchor.constraint(equalToConstant: 100),
+            extractButton.heightAnchor.constraint(equalToConstant: 36),
+            
+            // WebView（调整顶部约束）
+            webView.topAnchor.constraint(equalTo: extractButton.bottomAnchor, constant: 8),
             webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
@@ -141,6 +160,32 @@ class CustomWebBrowserViewController: UIViewController {
     
     @objc private func closeButtonTapped() {
         onDismiss()
+    }
+
+    @objc private func extractPageContent() {
+        guard let webView = webView else { return }
+        
+        // 注入 JavaScript 获取完整 HTML
+        let js = "document.querySelector('.oldschedule');"
+        
+        webView.evaluateJavaScript(js) { [weak self] result, error in
+            DispatchQueue.main.async {
+                if let html = result as? String {
+                    print("成功获取课程表容器，长度: \(html.count)")
+                    self?.handleExtractedHTML(html)
+                } else if let error = error {
+                    print("执行 JS 失败: \(error.localizedDescription)")
+                } else {
+                    print("未找到 class='oldschedule' 的 div")
+                }
+            }
+        }
+    }
+
+    // 预留处理函数
+    private func handleExtractedHTML(_ html: String) {
+        // TODO: 实现 HTML 解析和课程数据转换
+        print("📄 已接收到 HTML，准备解析...")
     }
 }
 
@@ -231,3 +276,4 @@ extension CustomWebBrowserViewController: WKUIDelegate {
         return nil
     }
 }
+

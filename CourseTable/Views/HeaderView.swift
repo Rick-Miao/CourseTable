@@ -124,9 +124,9 @@ struct HeaderView: View {
         let semesterLastDay = calendar.date(byAdding: .day, value: (config.totalWeeks * 7) - 1, to: semesterFirstDay) ?? semesterFirstDay
         
         if today < semesterFirstDay {
-            return "第1周（学期未开始）"
+            return "第\(currentWeek)周（学期未开始）"
         } else if today > semesterLastDay {
-            return "第\(config.totalWeeks)周（学期已结束）"
+            return "第\(currentWeek)周（学期已结束）"
         } else {
             return "第\(currentWeek)周"
         }
