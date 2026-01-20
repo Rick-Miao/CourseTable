@@ -249,9 +249,8 @@ extension CustomWebBrowserViewController: WKNavigationDelegate {
     // 监听加载进度
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if keyPath == "estimatedProgress" {
-            if let progress = webView.estimatedProgress as? Float {
-                progressView.setProgress(progress, animated: true)
-            }
+            let progress = webView.estimatedProgress
+            progressView.setProgress(Float(progress), animated: true)
         }
     }
     
