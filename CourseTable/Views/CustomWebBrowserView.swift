@@ -165,13 +165,32 @@ class CustomWebBrowserViewController: UIViewController {
     @objc private func extractPageContent() {
         guard let webView = webView else { return }
         
-        // 注入 JavaScript 获取完整 HTML
-        let js = "document.querySelector('.oldschedule');"
+        let js = """
+        (function() {
+            // 1. 先尝试在主页面查找
+            let container = document.querySelector('div.oldschedule');
+            if (container) {
+                return container.outerHTML;
+            }
+            
+            // 2. 尝试从 iframe 中查找
+            const iframe = document.getElementById('iframeautoheight');
+            if (iframe && iframe.contentDocument) {
+                container = iframe.contentDocument.querySelector('div.oldschedule');
+                if (container) {
+                    return container.outerHTML;
+                }
+            }
+            
+            return '未找到课程表';
+        })();
+        """
         
         webView.evaluateJavaScript(js) { [weak self] result, error in
             DispatchQueue.main.async {
                 if let html = result as? String {
                     print("成功获取课程表容器，长度: \(html.count)")
+                    print(html)
                     self?.handleExtractedHTML(html)
                 } else if let error = error {
                     print("执行 JS 失败: \(error.localizedDescription)")
@@ -182,11 +201,96 @@ class CustomWebBrowserViewController: UIViewController {
         }
     }
 
-    // 预留处理函数
+    // 处理函数
     private func handleExtractedHTML(_ html: String) {
-        // TODO: 实现 HTML 解析和课程数据转换
-        print("📄 已接收到 HTML，准备解析...")
+        do {
+            let (courses, maxPeriod) = try JITScheduleParser.parse(html: html)
+            print("成功解析 \(courses.count) 门课程")
+            
+            // 转换为你的 Course 结构
+            let convertedCourses = courses.map { course in
+                Course(
+                    name: course.name,
+                    teacher: course.teacher,
+                    classroom: course.classroom,
+                    week: course.week,
+                    times: course.times,
+                    startWeek: course.startWeek,
+                    endWeek: course.endWeek
+                )
+            }
+            
+            // 创建默认配置
+            let config = Config(
+                semesterStart: "2026-03-02",
+                totalWeeks: 20,
+                periods: Self.defaultPeriods(maxPeriod: maxPeriod)
+            )
+            
+            // 保存课程表
+            saveParsedCourses(convertedCourses, config: config)
+            
+        } catch {
+            print("解析失败: \(error)")
+            showAlert(message: "课程表解析失败: \(error.localizedDescription)")
+        }
     }
+    
+    // 默认节次配置
+    private static func defaultPeriods(maxPeriod: Int) -> [Config.Period] {
+        var periods: [Config.Period] = [
+            Config.Period(period: "1", startTime: "08:30", endTime: "09:15"),
+            Config.Period(period: "2", startTime: "09:20", endTime: "10:05"),
+            Config.Period(period: "3", startTime: "10:25", endTime: "11:10"),
+            Config.Period(period: "4", startTime: "11:15", endTime: "12:00"),
+            Config.Period(period: "5", startTime: "13:30", endTime: "14:15"),
+            Config.Period(period: "6", startTime: "14:20", endTime: "15:05"),
+            Config.Period(period: "7", startTime: "15:25", endTime: "16:10"),
+            Config.Period(period: "8", startTime: "16:15", endTime: "17:00"),
+            Config.Period(period: "9", startTime: "17:05", endTime: "17:50"),
+            Config.Period(period: "10", startTime: "18:30", endTime: "19:15"),
+            Config.Period(period: "11", startTime: "19:20", endTime: "20:05"),
+            Config.Period(period: "12", startTime: "20:10", endTime: "20:55")
+        ]
+        
+        // 如果最大节次超过12，补充默认时间段
+        if maxPeriod > 12 {
+            for i in 13...maxPeriod {
+                periods.append(Config.Period(period: "\(i)", startTime: "08:30", endTime: "09:15"))
+            }
+        }
+        
+        return periods
+    }
+    
+    // 保存解析结果
+    private func saveParsedCourses(_ courses: [Course], config: Config) {
+        let wrapper = ConfigWrapper(config: config, courses: courses)
+        
+        do {
+            let data = try JSONEncoder().encode(wrapper)
+            let name = "教务网_\(DateFormatter.exportFileName.string(from: Date()))"
+            FileHelper.saveCourseData(data, name: name)
+            onDismiss()
+            
+            // 通知主界面刷新
+            NotificationCenter.default.post(name: .courseDataUpdated, object: nil)
+            
+        } catch {
+            print("保存失败: \(error)")
+            showAlert(message: "保存课程表失败: \(error.localizedDescription)")
+        }
+    }
+    
+    // 显示错误提示
+    private func showAlert(message: String) {
+        DispatchQueue.main.async {
+            let alert = UIAlertController(title: "错误", message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "确定", style: .default))
+            self.present(alert, animated: true)
+        }
+    }
+
 }
 
 // MARK: - UITextFieldDelegate

@@ -18,4 +18,11 @@ enum FileHelper {
             try? FileManager.default.createDirectory(at: courseDataDirectory, withIntermediateDirectories: true)
         }
     }
+    
+    static func saveCourseData(_ data: Data, name: String) {
+        ensureCourseDataDirectoryExists()
+        let safeName = name.replacingOccurrences(of: "/", with: "_")
+        let fileURL = courseDataDirectory.appendingPathComponent("\(safeName).json")
+        try? data.write(to: fileURL)
+    }
 }

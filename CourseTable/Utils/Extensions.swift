@@ -50,3 +50,7 @@ extension DateFormatter {
         return formatter
     }()
 }
+
+extension Notification.Name {
+    static let courseDataUpdated = Notification.Name("courseDataUpdated")
+}

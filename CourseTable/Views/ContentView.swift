@@ -104,6 +104,18 @@ struct ContentView: View {
             .onAppear {
                 loadData()
                 courseNames = loadAllCourseNames()
+                
+                // 监听课程表更新
+                NotificationCenter.default.addObserver(
+                    forName: .courseDataUpdated,
+                    object: nil,
+                    queue: .main
+                ) { _ in
+                    self.courseNames = self.loadAllCourseNames()
+                    if let lastName = self.courseNames.last {
+                        self.loadCourseByName(lastName)
+                    }
+                }
             }
             // 课程表选择弹窗
             .sheet(isPresented: $showingCourseList) {
