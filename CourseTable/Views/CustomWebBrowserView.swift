@@ -190,7 +190,7 @@ class CustomWebBrowserViewController: UIViewController {
             DispatchQueue.main.async {
                 if let html = result as? String {
                     print("成功获取课程表容器，长度: \(html.count)")
-                    print(html)
+//                    print(html)
                     self?.handleExtractedHTML(html)
                 } else if let error = error {
                     print("执行 JS 失败: \(error.localizedDescription)")
@@ -205,6 +205,8 @@ class CustomWebBrowserViewController: UIViewController {
     private func handleExtractedHTML(_ html: String) {
         do {
             let (courses, maxPeriod) = try JITScheduleParser.parse(html: html)
+//            print(courses)
+//            print(maxPeriod)
             print("成功解析 \(courses.count) 门课程")
             
             // 转换为你的 Course 结构
